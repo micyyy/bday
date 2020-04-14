@@ -1,31 +1,25 @@
 import json
 import sys
-import datetime
+from datetime import datetime, timedelta
 
-_FILE = 'bday.json'
+_HOLIDAY_FILE = 'bday.json'
 
 def str_to_datetime(sdate: str) -> datetime:
-    if sdate == '':
-        dt = datetime.datetime.today()
-    else:
-        dt = datetime.datetime.strptime(sdate, "%Y%m%d")
-    
-    return dt 
+    return datetime.today() if sdate == '' else datetime.strptime(sdate, "%Y%m%d")
 
 def datetime_to_str(dt: datetime) -> str:
     return dt.strftime('%Y%m%d')
 
 
 class FindBDay():
-    def __init__(self, sdate: str):
-        self.in_date = sdate
-        self.file = _FILE
-    
+    def __init__(self, dt:datetime):
+        self.dt = dt
+
     def is_bday(self, dt:datetime) -> bool:
         if dt.weekday() in (5, 6):
             return False
 
-        with open(self.file) as jfile:
+        with open(_HOLIDAY_FILE) as jfile:
             bday = json.load(jfile)
 
             if dt.strftime('%Y/%m/%d') in bday['Holiday']:
@@ -33,36 +27,24 @@ class FindBDay():
 
             return True
 
-    def get_bday(self, dt:datetime) -> datetime:
-        bday = dt
-        while True:
-            if self.is_bday(bday):
-                break
+    def get_last_bday(self, ndays:int) -> list:
+        bdays = list()
+        date = self.dt
+        count = 0
+        while count < ndays:
+            if self.is_bday(date):
+                bdays.append(datetime_to_str(date))
+                count += 1
+            
+            date -= timedelta(days=1)
 
-            bday = bday - datetime.timedelta(days=1)
-        
-        return bday
-
-    def get_lday(self, dt:datetime) -> datetime:
-        bday = self.get_bday(dt)
-        bday = bday - datetime.timedelta(days=1)
-        lday = self.get_bday(bday)
-
-        return lday
+        return bdays
 
 def main(sdate):
-    print('sdate:{}'.format(sdate))
     dt = str_to_datetime(sdate)
-    print('dt:{}'.format(dt))
 
-    fbd = FindBDay(sdate)
-    print('{} is bday: {}'.format(datetime_to_str(dt), fbd.is_bday(dt)))
-
-    print('the lastest bday is {}'.format(datetime_to_str(fbd.get_bday(dt))))
-
-    print('the lastest lday is {}'.format(datetime_to_str(fbd.get_lday(dt))))
-
-    
+    fbd = FindBDay(dt)
+    print('get_last_bday {}'.format(fbd.get_last_bday(2)))
 
 if __name__ == '__main__':
     if len(sys.argv) >= 2 and len(sys.argv[1]) == 8 and sys.argv[1].isdigit():
